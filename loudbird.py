@@ -60,9 +60,7 @@ twitter = Twython(config.get('twatter', 'APP_KEY'), \
     config.get('twatter', 'OAUTH_TOKEN'), \
     config.get('twatter', 'OAUTH_TOKEN_SECRET'))
 
-#auth = twitter.get_authentication_tokens()
-#OAUTH_TOKEN = auth['oauth_token']
-#OAUTH_TOKEN_SECRET = auth['oauth_token_secret']
+engine = pyttsx.init()
 
 follows = config.items('following')
 for i in follows:
@@ -84,4 +82,8 @@ for i in follows:
             if result is None:
                 test_line.append(item)
         line = ' '.join(test_line)
-        print "'%s'" % line
+        print line
+        engine.say(line)
+        #engine.runAndWait()
+        #time.sleep(5)
+engine.runAndWait()
