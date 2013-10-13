@@ -23,8 +23,8 @@ config = configparser.SafeConfigParser()
 match_urls = re.compile(r"""((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.‌​][a-z]{2,4}/)(?:[^\s()<>]+|(([^\s()<>]+|(([^\s()<>]+)))*))+(?:(([^\s()<>]+|(‌​([^\s()<>]+)))*)|[^\s`!()[]{};:'".,<>?«»“”‘’]))""", re.DOTALL)
 
 def backup_config():
-    backup_file = "%s.backup-%i" % (configFile % int(time.time()))
-    os.rename(configFile, backup_file)
+    backup_file = "%s.backup-%i" % (config_file, int(time.time()))
+    os.rename(config_file, backup_file)
 
 def create_config():
     if not config.has_section('twatter'):
@@ -35,7 +35,7 @@ def create_config():
     config.set('twatter', 'OAUTH_TOKEN', "SAMESIES")
     config.set('twatter', 'OAUTH_TOKEN_SECRET', 'DUH')
 
-    config.set('twatter', 'rate_adjust', -50)
+    config.set('twatter', 'rate_adjust', "-50")
 
     config.add_section('following')
     #save_config()
