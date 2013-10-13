@@ -34,6 +34,8 @@ def create_config():
     config.set('twatter', 'OAUTH_TOKEN', "SAMESIES")
     config.set('twatter', 'OAUTH_TOKEN_SECRET', 'DUH')
 
+    config.set('twatter', 'rate_adjust', -50)
+
     config.add_section('following')
     save_config()
 
@@ -61,6 +63,8 @@ twitter = Twython(config.get('twatter', 'APP_KEY'), \
     config.get('twatter', 'OAUTH_TOKEN_SECRET'))
 
 engine = pyttsx.init()
+rate = engine.getProperty('rate')
+engine.setProperty('rate', rate+int(config.get('twatter', 'rate_adjust')))
 
 follows = config.items('following')
 for i in follows:
@@ -75,7 +79,10 @@ for i in follows:
         timeline = twitter.get_user_timeline(screen_name=name, \
         since_id=value, exclude_replies="true")
 
+    last_id = None
     for t in timeline:
+        if last_id is None:
+            last_id = t['id']
         test_line = []
         for item in t['text'].split(' '):
             result = match_urls.match(item)
@@ -84,6 +91,10 @@ for i in follows:
         line = ' '.join(test_line)
         print line
         engine.say(line)
-        #engine.runAndWait()
-        #time.sleep(5)
+
+    if last_id is not None:
+        config.set('following', name, str(last_id))
+
 engine.runAndWait()
+
+save_config()
