@@ -11,6 +11,7 @@ except ImportError:
 import os
 import time
 import re
+import sys
 
 import pyttsx
 from twython import Twython
@@ -37,7 +38,7 @@ def create_config():
     config.set('twatter', 'rate_adjust', -50)
 
     config.add_section('following')
-    save_config()
+    #save_config()
 
 def save_config():
     with open(config_file, 'w') as f:
@@ -55,46 +56,55 @@ def load_config():
     else:
         create_config()
 
-load_config()
+def runme():
+    load_config()
+    twitter = Twython(config.get('twatter', 'APP_KEY'), \
+        config.get('twatter', 'APP_SECRET'), \
+        config.get('twatter', 'OAUTH_TOKEN'), \
+        config.get('twatter', 'OAUTH_TOKEN_SECRET'))
 
-twitter = Twython(config.get('twatter', 'APP_KEY'), \
-    config.get('twatter', 'APP_SECRET'), \
-    config.get('twatter', 'OAUTH_TOKEN'), \
-    config.get('twatter', 'OAUTH_TOKEN_SECRET'))
+    engine = pyttsx.init()
+    rate = engine.getProperty('rate')
+    engine.setProperty('rate', rate+int(config.get('twatter', 'rate_adjust')))
 
-engine = pyttsx.init()
-rate = engine.getProperty('rate')
-engine.setProperty('rate', rate+int(config.get('twatter', 'rate_adjust')))
+    follows = config.items('following')
+    for i in follows:
+        name = i[0]
+        value = int(i[1])
+        print "Name: %s" % name
 
-follows = config.items('following')
-for i in follows:
-    name = i[0]
-    value = int(i[1])
-    print "Name: %s" % name
+        if value < 0:
+            timeline = twitter.get_user_timeline(screen_name=name, \
+            count=abs(value), exclude_replies="true")
+        else:
+            timeline = twitter.get_user_timeline(screen_name=name, \
+            since_id=value, exclude_replies="true")
 
-    if value < 0:
-        timeline = twitter.get_user_timeline(screen_name=name, \
-        count=abs(value), exclude_replies="true")
-    else:
-        timeline = twitter.get_user_timeline(screen_name=name, \
-        since_id=value, exclude_replies="true")
+        last_id = None
+        for t in timeline:
+            if last_id is None:
+                last_id = t['id']
+            test_line = []
+            for item in t['text'].split(' '):
+                result = match_urls.match(item)
+                if result is None:
+                    test_line.append(item)
+            line = ' '.join(test_line)
+            print line
+            engine.say(line)
 
-    last_id = None
-    for t in timeline:
-        if last_id is None:
-            last_id = t['id']
-        test_line = []
-        for item in t['text'].split(' '):
-            result = match_urls.match(item)
-            if result is None:
-                test_line.append(item)
-        line = ' '.join(test_line)
-        print line
-        engine.say(line)
+        if last_id is not None:
+            config.set('following', name, str(last_id))
 
-    if last_id is not None:
-        config.set('following', name, str(last_id))
+    engine.runAndWait()
 
-engine.runAndWait()
+if 'genconf' in sys.argv:
+    print "Config generated, edit .loudbird.conf in your system's"
+    print "home/user directory..."
+    if os.path.isfile(config_file):
+        backup_config()
+    create_config()
+else:
+    runme()
 
 save_config()
